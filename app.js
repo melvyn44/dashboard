@@ -574,3 +574,25 @@ function refreshAll(){
 }
 
 refreshAll();
+// Notes cuisine
+(function(){
+  const KEY = "kitchen_notes_v1";
+  const notes = document.getElementById("kitchenNotes");
+  const save = document.getElementById("saveNotes");
+  const clear = document.getElementById("clearNotes");
+
+  if(!notes) return;
+
+  notes.value = localStorage.getItem(KEY) || "";
+
+  save?.addEventListener("click", () => {
+    localStorage.setItem(KEY, notes.value || "");
+    alert("Notes sauvées ✅");
+  });
+
+  clear?.addEventListener("click", () => {
+    if(!confirm("Vider les notes ?")) return;
+    notes.value = "";
+    localStorage.setItem(KEY, "");
+  });
+})();
