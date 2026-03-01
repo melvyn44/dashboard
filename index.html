@@ -1,211 +1,267 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard Appartement</title>
+  <title>Dashboard Cuisine</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="dot"></div>
-      <div>
-        <div class="title">Dashboard</div>
-        <div class="subtitle" id="clock">--:--</div>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebarTop">
+        <div class="logo">
+          <span class="logoDot"></span>
+          <div>
+            <div class="logoTitle">Cuisine</div>
+            <div class="logoSub" id="clock">--:--</div>
+          </div>
+        </div>
+
+        <button class="themeToggle" id="themeToggle" aria-label="Changer le thème">
+          <span class="themeIcon" aria-hidden="true">🌓</span>
+          <span class="themeText">Thème</span>
+        </button>
       </div>
+
+      <nav class="menu">
+        <button class="navLink is-active" data-view="home">🏠 Accueil</button>
+        <button class="navLink" data-view="recipes">🍳 Recettes</button>
+        <button class="navLink" data-view="groceries">🛒 Courses</button>
+        <button class="navLink" data-view="budget">💰 Budget</button>
+        <button class="navLink" data-view="tasks">🧹 Tâches</button>
+      </nav>
+
+      <div class="sidebarFooter">
+        <div class="smallMuted">Frigo • Offline • V1</div>
+        <div class="rowSmall">
+          <button class="btn ghost" id="export">Exporter</button>
+          <button class="btn ghost" id="import">Importer</button>
+          <input id="importFile" type="file" accept="application/json" hidden />
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <header class="topbar">
+        <div class="pageTitle" id="pageTitle">Accueil</div>
+        <div class="topbarRight">
+          <div class="pill" id="kpiPill">—</div>
+        </div>
+      </header>
+
+      <main class="main">
+
+        <!-- HOME -->
+        <section class="view is-visible" id="view-home">
+          <div class="grid grid-4">
+            <article class="statCard">
+              <div class="statTop">
+                <div class="statLabel">Courses à faire</div>
+                <div class="statIcon">🛒</div>
+              </div>
+              <div class="statValue" id="kpi-groceries">0</div>
+              <div class="statHint">Tap pour ouvrir “Courses”.</div>
+            </article>
+
+            <article class="statCard">
+              <div class="statTop">
+                <div class="statLabel">Tâches ouvertes</div>
+                <div class="statIcon">🧹</div>
+              </div>
+              <div class="statValue" id="kpi-tasks">0</div>
+              <div class="statHint">Tap pour ouvrir “Tâches”.</div>
+            </article>
+
+            <article class="statCard">
+              <div class="statTop">
+                <div class="statLabel">Dépenses (mois)</div>
+                <div class="statIcon">💳</div>
+              </div>
+              <div class="statValue" id="kpi-budget-month">0 €</div>
+              <div class="statHint">Résumé du budget mensuel.</div>
+            </article>
+
+            <article class="statCard">
+              <div class="statTop">
+                <div class="statLabel">Idée rapide</div>
+                <div class="statIcon">🍳</div>
+              </div>
+              <div class="row">
+                <input id="home-ingredient" class="input" placeholder="Ingrédients: œufs, riz..." />
+                <button class="btn primary" id="home-search">OK</button>
+              </div>
+              <div id="home-recipes" class="list"></div>
+            </article>
+          </div>
+
+          <div class="grid grid-2">
+            <!-- Spotify -->
+            <article class="card">
+              <div class="cardHeader">
+                <h2>🎵 Spotify</h2>
+                <div class="smallMuted">Playlist / album / track</div>
+              </div>
+
+              <!-- Remplace l’URL par TA playlist -->
+              <!-- Exemple playlist : https://open.spotify.com/playlist/<ID> -->
+              <iframe
+                class="spotify"
+                src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?utm_source=generator"
+                frameborder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy">
+              </iframe>
+
+              <div class="smallMuted">
+                Astuce : si tu veux une playlist perso, remplace l’ID dans l’URL embed.
+              </div>
+            </article>
+
+            <!-- Notes cuisine -->
+            <article class="card">
+              <div class="cardHeader">
+                <h2>📝 Notes cuisine</h2>
+                <div class="smallMuted">Idées / rappels / cuisson</div>
+              </div>
+              <textarea id="kitchenNotes" class="textarea" placeholder="Ex: sortir poulet du congélo, acheter oignons…"></textarea>
+              <div class="row">
+                <button class="btn" id="saveNotes">Sauver</button>
+                <button class="btn ghost" id="clearNotes">Vider</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- RECIPES -->
+        <section class="view" id="view-recipes">
+          <article class="card">
+            <div class="cardHeader">
+              <h2>🍲 Recettes</h2>
+              <div class="smallMuted">
+                Conseil: on bascule ici vers ton système “Carnet de recettes”.
+              </div>
+            </div>
+
+            <div class="callout">
+              <div>
+                <div class="calloutTitle">Ouvrir le carnet de recettes</div>
+                <div class="smallMuted">Interface complète avec quantités, coût, plan, liste de courses.</div>
+              </div>
+              <a class="btn primary" href="recipes.html">Ouvrir</a>
+            </div>
+
+            <div class="smallMuted">
+              Pourquoi une page séparée ? Ton code recettes est gros, et comme ça on garde le dashboard super fluide sur vieille tablette.
+            </div>
+          </article>
+        </section>
+
+        <!-- GROCERIES -->
+        <section class="view" id="view-groceries">
+          <div class="grid grid-2">
+            <article class="card">
+              <div class="cardHeader">
+                <h2>🛒 Ajouter</h2>
+                <div class="smallMuted">Simple et rapide en cuisine</div>
+              </div>
+              <div class="row">
+                <input id="g-item" class="input" placeholder="Ex: lait" />
+                <input id="g-qty" class="input small" placeholder="Qté" />
+                <input id="g-unit" class="input small" placeholder="Unité" />
+                <button class="btn primary" id="g-add">Ajouter</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <h2>✅ À acheter</h2>
+                <button class="btn danger ghost" id="g-clear">Tout effacer</button>
+              </div>
+              <div id="groceries-list" class="list"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- BUDGET -->
+        <section class="view" id="view-budget">
+          <div class="grid grid-2">
+            <article class="card">
+              <div class="cardHeader">
+                <h2>💰 Résumé</h2>
+                <div class="smallMuted">Suivi simple</div>
+              </div>
+              <div class="kpiRow">
+                <div class="kpi">
+                  <div class="kpiLabel">Total</div>
+                  <div class="kpiValue" id="b-total">0 €</div>
+                </div>
+                <div class="kpi">
+                  <div class="kpiLabel">Ce mois</div>
+                  <div class="kpiValue" id="b-month">0 €</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <h2>➕ Dépense</h2>
+                <button class="btn danger ghost" id="b-clear">Tout effacer</button>
+              </div>
+
+              <label class="label">Libellé</label>
+              <input id="b-label" class="input" placeholder="Ex: courses Carrefour" />
+
+              <div class="row">
+                <input id="b-amount" class="input" type="number" min="0" step="0.01" placeholder="Montant (€)" />
+                <select id="b-cat" class="input">
+                  <option value="Courses">Courses</option>
+                  <option value="Loyer">Loyer</option>
+                  <option value="Abonnements">Abonnements</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Divers">Divers</option>
+                </select>
+                <button class="btn primary" id="b-add">Ajouter</button>
+              </div>
+
+              <div id="budget-list" class="list"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- TASKS -->
+        <section class="view" id="view-tasks">
+          <div class="grid grid-2">
+            <article class="card">
+              <div class="cardHeader">
+                <h2>🧹 Ajouter</h2>
+                <div class="smallMuted">Ménage / poubelles / vaisselle</div>
+              </div>
+              <div class="row">
+                <input id="t-item" class="input" placeholder="Ex: sortir poubelles" />
+                <button class="btn primary" id="t-add">Ajouter</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <h2>📋 Liste</h2>
+                <button class="btn danger ghost" id="t-clear">Tout effacer</button>
+              </div>
+              <div id="tasks-list" class="list"></div>
+            </article>
+          </div>
+        </section>
+
+      </main>
     </div>
+  </div>
 
-    <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab is-active" data-view="home" role="tab">Accueil</button>
-      <button class="tab" data-view="recipes" role="tab">Recettes</button>
-      <button class="tab" data-view="groceries" role="tab">Courses</button>
-      <button class="tab" data-view="budget" role="tab">Budget</button>
-      <button class="tab" data-view="tasks" role="tab">Tâches</button>
-    </nav>
-  </header>
-
-  <main class="layout">
-    <!-- HOME -->
-    <section class="view is-visible" id="view-home">
-      <div class="grid">
-        <article class="card">
-          <h2>📌 Aujourd’hui</h2>
-          <div class="kpi-row">
-            <div class="kpi">
-              <div class="kpi-label">Courses à faire</div>
-              <div class="kpi-value" id="kpi-groceries">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-label">Tâches ouvertes</div>
-              <div class="kpi-value" id="kpi-tasks">0</div>
-            </div>
-          </div>
-          <div class="hint">Astuce : mets la tablette en mode kiosque + écran toujours allumé.</div>
-        </article>
-
-        <article class="card">
-          <h2>🍳 Recettes rapides</h2>
-          <div class="row">
-            <input id="home-ingredient" class="input" placeholder="Ex: pâtes, œufs, tomate..." />
-            <button class="btn" id="home-search">Trouver</button>
-          </div>
-          <div id="home-recipes" class="list"></div>
-        </article>
-
-        <article class="card">
-          <h2>🌦️ Météo (placeholder)</h2>
-          <p class="muted">Tu pourras brancher une API plus tard. Pour l’instant, ce bloc est prêt.</p>
-          <div class="weather-placeholder">
-            <div class="big">—</div>
-            <div class="muted">Ville</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- RECIPES -->
-    <section class="view" id="view-recipes">
-      <div class="grid two">
-        <article class="card">
-          <h2>➕ Ajouter une recette</h2>
-
-          <label class="label">Nom</label>
-          <input id="r-name" class="input" placeholder="Ex: Pâtes carbo" />
-
-          <label class="label">Ingrédients (un par ligne)</label>
-          <textarea id="r-ingredients" class="textarea" placeholder="pâtes - 200 g&#10;œufs - 2&#10;lardons - 100 g"></textarea>
-
-          <label class="label">Étapes</label>
-          <textarea id="r-steps" class="textarea" placeholder="1) ...&#10;2) ..."></textarea>
-
-          <div class="row">
-            <label class="label inline">
-              Coût estimé (€)
-              <input id="r-cost" class="input small" type="number" min="0" step="0.1" placeholder="4.5" />
-            </label>
-
-            <button class="btn primary" id="r-add">Ajouter</button>
-          </div>
-
-          <div class="hint">Tout est stocké sur la tablette (localStorage). Pas besoin d’internet.</div>
-        </article>
-
-        <article class="card">
-          <h2>🔎 Recherche</h2>
-          <div class="row">
-            <input id="r-search-name" class="input" placeholder="Chercher par nom..." />
-          </div>
-          <div class="row">
-            <input id="r-search-ingredients" class="input" placeholder="Chercher par ingrédients (séparés par virgules)..." />
-            <button class="btn" id="r-search">Filtrer</button>
-          </div>
-          <div class="row">
-            <button class="btn danger ghost" id="r-clear">Tout effacer</button>
-          </div>
-
-          <div id="recipes-list" class="list"></div>
-        </article>
-      </div>
-    </section>
-
-    <!-- GROCERIES -->
-    <section class="view" id="view-groceries">
-      <div class="grid two">
-        <article class="card">
-          <h2>🛒 Liste de courses</h2>
-          <div class="row">
-            <input id="g-item" class="input" placeholder="Ex: lait" />
-            <input id="g-qty" class="input small" placeholder="Qté (ex: 2)" />
-            <input id="g-unit" class="input small" placeholder="Unité (ex: L)" />
-            <button class="btn primary" id="g-add">Ajouter</button>
-          </div>
-          <div class="hint">Tip : mets la quantité/grammage (ex: 500 g, 1 kg, 6 pièces).</div>
-        </article>
-
-        <article class="card">
-          <h2>✅ À acheter</h2>
-          <div id="groceries-list" class="list"></div>
-          <div class="row">
-            <button class="btn danger ghost" id="g-clear">Tout effacer</button>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- BUDGET -->
-    <section class="view" id="view-budget">
-      <div class="grid two">
-        <article class="card">
-          <h2>💰 Budget</h2>
-          <div class="kpi-row">
-            <div class="kpi">
-              <div class="kpi-label">Total dépenses</div>
-              <div class="kpi-value" id="b-total">0 €</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-label">Ce mois-ci</div>
-              <div class="kpi-value" id="b-month">0 €</div>
-            </div>
-          </div>
-          <div class="hint">Version 1 : suivi simple des dépenses (sans banque).</div>
-        </article>
-
-        <article class="card">
-          <h2>➕ Ajouter une dépense</h2>
-          <label class="label">Libellé</label>
-          <input id="b-label" class="input" placeholder="Ex: courses Carrefour" />
-
-          <div class="row">
-            <input id="b-amount" class="input" type="number" min="0" step="0.01" placeholder="Montant (€)" />
-            <select id="b-cat" class="input">
-              <option value="Courses">Courses</option>
-              <option value="Loyer">Loyer</option>
-              <option value="Abonnements">Abonnements</option>
-              <option value="Transport">Transport</option>
-              <option value="Divers">Divers</option>
-            </select>
-            <button class="btn primary" id="b-add">Ajouter</button>
-          </div>
-
-          <div id="budget-list" class="list"></div>
-          <div class="row">
-            <button class="btn danger ghost" id="b-clear">Tout effacer</button>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- TASKS -->
-    <section class="view" id="view-tasks">
-      <div class="grid two">
-        <article class="card">
-          <h2>🧹 Tâches</h2>
-          <div class="row">
-            <input id="t-item" class="input" placeholder="Ex: sortir poubelles" />
-            <button class="btn primary" id="t-add">Ajouter</button>
-          </div>
-          <div class="hint">Version 2 possible : tâches récurrentes (ménage, lessive...).</div>
-        </article>
-
-        <article class="card">
-          <h2>📋 Liste</h2>
-          <div id="tasks-list" class="list"></div>
-          <div class="row">
-            <button class="btn danger ghost" id="t-clear">Tout effacer</button>
-          </div>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <span class="muted">Local • Offline • Version 1</span>
-    <button class="btn ghost" id="export">Exporter</button>
-    <button class="btn ghost" id="import">Importer</button>
-    <input id="importFile" type="file" accept="application/json" hidden />
-  </footer>
-
+  <script src="theme.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
