@@ -68,13 +68,27 @@ function mergeDefaults(obj, defaults){
 let state = loadState();
 
 /* ---------- Navigation ---------- */
+/* ---------- Navigation (sidebar) ---------- */
 function setView(view){
-  $$(".tab").forEach(b => b.classList.toggle("is-active", b.dataset.view === view));
-  $$(".view").forEach(v => v.classList.remove("is-visible"));
-  $("#view-" + view).classList.add("is-visible");
+  document.querySelectorAll(".navLink").forEach(b =>
+    b.classList.toggle("is-active", b.dataset.view === view)
+  );
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("is-visible"));
+  const target = document.getElementById("view-" + view);
+  if(target) target.classList.add("is-visible");
+
+  const titleMap = {
+    home: "Accueil",
+    recipes: "Recettes",
+    groceries: "Courses",
+    budget: "Budget",
+    tasks: "Tâches",
+  };
+  const pt = document.getElementById("pageTitle");
+  if(pt) pt.textContent = titleMap[view] || "Dashboard";
 }
 
-$$(".tab").forEach(btn => {
+document.querySelectorAll(".navLink").forEach(btn => {
   btn.addEventListener("click", () => setView(btn.dataset.view));
 });
 
@@ -558,4 +572,5 @@ function refreshAll(){
   renderKpis();
   renderHomeRecipes();
 }
+
 refreshAll();
