@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Carnet de recettes — Quantités, coût, liste de courses</title>
+  <style>
+    :root { --gap: 12px; --r: 14px; --b: 1px solid #e7e7ee; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:#f6f7fb; color:#111; }
+    header { position:sticky; top:0; z-index:10; background:#fff; border-bottom: var(--b); padding:16px; }
+    header h1 { margin:0 0 6px; font-size:18px; }
+    header p { margin:0; color:#555; font-size:13px; line-height:1.35; }
+
+    main { max-width:1200px; margin:0 auto; padding:16px; display:grid; gap:var(--gap); grid-template-columns:1fr; }
+    @media (min-width: 980px){ main { grid-template-columns: 460px 1fr; align-items:start; } }
+
+    .card { background:#fff; border: var(--b); border-radius: var(--r); padding:14px; box-shadow:0 1px 0 rgba(0,0,0,.03); }
+    .card h2 { margin:0 0 10px; font-size:15px; }
+
+    label { display:block; font-size:12px; color:#444; margin-bottom:6px; }
+    input, textarea, button, select {
+      width:100%; box-sizing:border-box; padding:12px 12px; border-radius:12px;
+      border:1px solid #d9d9e6; background:#fff; font-size:15px;
+    }
+    textarea { min-height:90px; resize:vertical; }
+
+    button { cursor:pointer; border:1px solid #cfcfe0; background:#111; color:#fff; }
+    button.secondary { background:#fff; color:#111; }
+    button.danger { background:#b00020; border-color:#b00020; color:#fff; }
+    button:active { transform: translateY(1px); }
+
+    .row { display:grid; gap:var(--gap); grid-template-columns:1fr; }
+    @media (min-width:520px){ .row.two { grid-template-columns: 1fr 1fr; } }
+
+    .muted { color:#666; font-size:12px; line-height:1.35; margin-top:6px; }
+    .hr { height:1px; background:#eee; margin:12px 0; }
+
+    .btns2 { display:grid; gap:var(--gap); grid-template-columns:1fr 1fr; }
+    .btns3 { display:grid; gap:var(--gap); grid-template-columns:1fr 1fr 1fr; }
+
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#f1f2f8; border:1px solid #e6e6f2; font-size:12px; margin:0 6px 6px 0; }
+    .resultsHeader { display:flex; gap:10px; justify-content:space-between; align-items:baseline; }
+    .count { font-size:12px; color:#666; }
+
+    .recipe { border:1px solid #ececf5; border-radius:14px; padding:12px; margin-top:10px; background:#fff; }
+    .recipe h3 { margin:0 0 6px; font-size:16px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .score { font-size:12px; color:#444; background:#f6f7fb; border:1px solid #e7e7ee; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+    .small { font-size:12px; color:#555; line-height:1.4; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 6px; }
+
+    details { margin-top:8px; }
+    summary { cursor:pointer; font-size:13px; color:#111; }
+
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .actions button { width:auto; padding:10px 12px; font-size:14px; border-radius:12px; }
+
+    .empty { color:#666; font-size:13px; padding:8px 0; }
+
+    /* Ingrédients (éditeur) */
+    .ingTable { display:grid; gap:10px; }
+    .ingRow {
+      display:grid; gap:10px;
+      grid-template-columns: 90px 90px 1fr 120px 44px;
+      align-items:center;
+    }
+    @media (max-width:520px){
+      .ingRow { grid-template-columns: 1fr 1fr; }
+      .ingRow .c3, .ingRow .c4, .ingRow .c5 { grid-column: 1 / -1; }
+    }
+    .mini { padding:10px 10px; font-size:14px; }
+    .iconBtn { width:44px; padding:10px 0; text-align:center; }
+    .ingHeader { display:grid; gap:10px; grid-template-columns: 90px 90px 1fr 120px 44px; }
+    @media (max-width:520px){ .ingHeader { display:none; } }
+    .ingHeader div { font-size:12px; color:#666; padding:0 2px; }
+
+    .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; }
+    .ok { color:#0b6; }
+    .warn { color:#b60; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🍲 Carnet de recettes</h1>
+  <p>
+    Ajoute des recettes avec <b>quantités</b>, calcule le <b>coût</b>, cherche par <b>nom</b> ou par <b>ingrédients</b>,
+    et génère une <b>liste de courses</b>. Tout est sauvegardé dans le navigateur.
+  </p>
+</header>
+
+<main>
+  <!-- FORM -->
+  <section class="card">
+    <h2 id="formTitle">Ajouter une recette</h2>
+
+    <div class="row">
+      <div>
+        <label for="name">Nom *</label>
+        <input id="name" placeholder="Ex: Riz aux lentilles" />
+      </div>
+
+      <div class="row two">
+        <div>
+          <label for="category">Tags / catégorie (optionnel)</label>
+          <input id="category" placeholder="Ex: pas cher, végétarien, rapide…" />
+        </div>
+        <div>
+          <label for="time">Temps (optionnel)</label>
+          <input id="time" placeholder="Ex: 25 min" />
+        </div>
+      </div>
+
+      <div class="row two">
+        <div>
+          <label for="servings">Portions (pour cette recette) *</label>
+          <input id="servings" inputmode="numeric" placeholder="Ex: 4" />
+          <div class="muted">Les quantités ingrédient ci-dessous correspondent à ce nombre de portions.</div>
+        </div>
+        <div>
+          <label for="costNote">Note coût (optionnel)</label>
+          <input id="costNote" placeholder="Ex: ~1€/portion si promo" />
+        </div>
+      </div>
+
+      <div>
+        <label>Ingrédients (quantité + unité + nom + prix/unité)</label>
+        <div class="ingHeader">
+          <div>Quantité</div>
+          <div>Unité</div>
+          <div>Nom</div>
+          <div>Prix/unité (€)</div>
+          <div></div>
+        </div>
+
+        <div id="ingTable" class="ingTable"></div>
+
+        <div class="btns2" style="margin-top:10px;">
+          <button type="button" class="secondary" id="addIngBtn">+ Ajouter un ingrédient</button>
+          <button type="button" class="secondary" id="addCommonBtn">+ Ajouter “bases”</button>
+        </div>
+        <div class="muted">
+          <b>Prix/unité</b> = prix pour l’unité choisie. Ex: “riz 200 g” → unité g, prix/unité = prix pour 1 g (tu peux aussi mettre 1kg et prix/unité par kg).<br>
+          Astuce facile : mets unité “kg” et prix/unité “€” par kg, ou unité “pièce” et prix/unité par pièce.
+        </div>
+      </div>
+
+      <div>
+        <label for="steps">Préparation (optionnel)</label>
+        <textarea id="steps" placeholder="Ex: 1) Cuire… 2) Mélanger…"></textarea>
+      </div>
+
+      <div class="btns2">
+        <button id="saveBtn">Enregistrer</button>
+        <button class="secondary" id="resetBtn" type="button">Réinitialiser</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="btns3">
+        <button class="secondary" id="exportBtn" type="button">Exporter JSON</button>
+        <button class="secondary" id="importBtn" type="button">Importer JSON</button>
+        <button class="danger" id="wipeBtn" type="button">Tout effacer</button>
+      </div>
+      <input id="fileInput" type="file" accept="application/json" style="display:none" />
+      <div class="muted">Export/Import = sauvegarde et transfert entre appareils.</div>
+    </div>
+  </section>
+
+  <!-- SEARCH / PLAN -->
+  <section class="card">
+    <div class="resultsHeader">
+      <h2>Rechercher & Planifier</h2>
+      <div class="count" id="countLabel"></div>
+    </div>
+
+    <div class="row two">
+      <div>
+        <label for="qName">Par nom / tag</label>
+        <input id="qName" placeholder="Ex: omelette, soupe, pas cher…" />
+      </div>
+      <div>
+        <label for="qIng">Avec les ingrédients que tu as (noms)</label>
+        <input id="qIng" placeholder="Ex: oeufs, riz, oignon" />
+        <div class="muted">Tu tapes ce que tu as, ça te propose des recettes + un score de match.</div>
+      </div>
+    </div>
+
+    <div class="row two" style="margin-top:12px;">
+      <div>
+        <label for="mode">Mode ingrédients</label>
+        <select id="mode">
+          <option value="any">Match si au moins 1 ingrédient correspond</option>
+          <option value="best">Meilleurs matchs (trié par score)</option>
+        </select>
+      </div>
+      <div>
+        <label for="sort">Tri</label>
+        <select id="sort">
+          <option value="score">Score / meilleur match</option>
+          <option value="name">Nom (A → Z)</option>
+          <option value="recent">Modifié récemment</option>
+          <option value="cheap">Coût estimé / portion (si dispo)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h2 style="margin-top:0;">🧾 Plan & Liste de courses</h2>
+    <div class="row two">
+      <div>
+        <label for="pantry">Ce que tu as déjà (optionnel)</label>
+        <input id="pantry" placeholder="Ex: sel, poivre, huile, riz" />
+        <div class="muted">Ça sert à marquer “probablement déjà à la maison” dans la liste de courses.</div>
+      </div>
+      <div>
+        <label for="planNote">Note plan (optionnel)</label>
+        <input id="planNote" placeholder="Ex: repas semaine / batch cooking" />
+      </div>
+    </div>
+
+    <div id="plan" class="empty" style="margin-top:10px;"></div>
+
+    <div class="btns2" style="margin-top:10px;">
+      <button type="button" class="secondary" id="clearPlanBtn">Vider le plan</button>
+      <button type="button" id="copyListBtn">Copier la liste de courses</button>
+    </div>
+
+    <div class="hr"></div>
+
+    <h2 style="margin-top:0;">Résultats</h2>
+    <div id="results"></div>
+  </section>
+</main>
+
+<script>
+  // ---------------- Storage keys
+  const LS_RECIPES = "recettes_v2";
+  const LS_PLAN = "plan_v1";
+
+  // ---------------- Helpers
+  const $ = (id) => document.getElementById(id);
+
+  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+  function normalize(str) {
+    return (str || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s,']/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseList(text) {
+    return normalize(text)
+      .split(/,|\n/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .filter((v,i,a)=>a.indexOf(v)===i);
+  }
+
+  function loadJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : fallback;
+      return parsed ?? fallback;
+    } catch { return fallback; }
+  }
+
+  function saveJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function n2(x) {
+    const v = Number(x);
+    if (!isFinite(v)) return null;
+    return v;
+  }
+
+  function fmtNum(x) {
+    if (x == null) return "";
+    const v = Number(x);
+    if (!isFinite(v)) return "";
+    if (Math.abs(v) >= 100) return String(Math.round(v));
+    if (Math.abs(v) >= 10) return (Math.round(v*10)/10).toString();
+    return (Math.round(v*100)/100).toString();
+  }
+
+  // ---------------- Unit normalization for shopping list
+  // We only unify: kg->g, l->ml. Others remain as-is.
+  function toBaseUnit(qty, unit) {
+    const u = normalize(unit);
+    const q = Number(qty);
+    if (!isFinite(q)) return { qty: null, unit: u || "" };
+
+    if (u === "kg") return { qty: q * 1000, unit: "g" };
+    if (u === "l")  return { qty: q * 1000, unit: "ml" };
+    return { qty: q, unit: u || "" };
+  }
+
+  function unitLabel(u) {
+    const x = normalize(u);
+    if (!x) return "";
+    // friendly french
+    if (x === "piece" || x === "pieces" || x === "pc") return "pièce";
+    if (x === "c a soupe" || x === "cas" || x === "cuillere a soupe") return "c. à soupe";
+    if (x === "c a cafe" || x === "cac" || x === "cuillere a cafe") return "c. à café";
+    return u;
+  }
+
+  // ---------------- State
+  let recipes = loadJSON(LS_RECIPES, []);
+  let plan = loadJSON(LS_PLAN, []); // [{recipeId, servingsWanted}]
+  let editingId = null;
+
+  // ---------------- DOM
+  const nameEl = $("name");
+  const catEl = $("category");
+  const timeEl = $("time");
+  const servingsEl = $("servings");
+  const costNoteEl = $("costNote");
+  const stepsEl = $("steps");
+  const ingTableEl = $("ingTable");
+  const addIngBtn = $("addIngBtn");
+  const addCommonBtn = $("addCommonBtn");
+
+  const saveBtn = $("saveBtn");
+  const resetBtn = $("resetBtn");
+  const formTitle = $("formTitle");
+
+  const qNameEl = $("qName");
+  const qIngEl = $("qIng");
+  const modeEl = $("mode");
+  const sortEl = $("sort");
+  const resultsEl = $("results");
+  const countLabel = $("countLabel");
+
+  const pantryEl = $("pantry");
+  const planNoteEl = $("planNote");
+  const planEl = $("plan");
+  const clearPlanBtn = $("clearPlanBtn");
+  const copyListBtn = $("copyListBtn");
+
+  const exportBtn = $("exportBtn");
+  const importBtn = $("importBtn");
+  const wipeBtn = $("wipeBtn");
+  const fileInput = $("fileInput");
+
+  // ---------------- Ingredient editor rows
+  function makeIngRow(data = {}) {
+    const row = document.createElement("div");
+    row.className = "ingRow";
+
+    row.innerHTML = `
+      <input class="mini c1" inputmode="decimal" placeholder="Qté" value="${escapeHtml(data.qty ?? "")}">
+      <input class="mini c2" placeholder="Unité" value="${escapeHtml(data.unit ?? "")}">
+      <input class="mini c3" placeholder="Nom ingrédient (ex: riz)" value="${escapeHtml(data.name ?? "")}">
+      <input class="mini c4" inputmode="decimal" placeholder="€/unité" value="${escapeHtml(data.pricePerUnit ?? "")}">
+      <button type="button" class="danger iconBtn c5" title="Supprimer">✕</button>
+    `;
+
+    const delBtn = row.querySelector("button");
+    delBtn.addEventListener("click", () => row.remove());
+    return row;
+  }
+
+  function addIngRow(data) { ingTableEl.appendChild(makeIngRow(data)); }
+
+  function readIngRows() {
+    const rows = [...ingTableEl.querySelectorAll(".ingRow")];
+    const out = [];
+
+    for (const r of rows) {
+      const [qtyEl, unitEl, nameEl2, ppuEl] = r.querySelectorAll("input");
+      const name = (nameEl2.value || "").trim();
+      const unit = (unitEl.value || "").trim();
+      const qty = n2(qtyEl.value);
+      const pricePerUnit = n2(ppuEl.value);
+
+      if (!name) continue; // skip empty
+      out.push({
+        name,
+        name_n: normalize(name),
+        qty: qty ?? null,
+        unit,
+        unit_n: normalize(unit),
+        pricePerUnit: pricePerUnit ?? null
+      });
+    }
+    return out;
+  }
+
+  function ensureAtLeastOneRow() {
+    if (ingTableEl.querySelectorAll(".ingRow").length === 0) addIngRow({});
+  }
+
+  // ---------------- Recipe cost
+  function computeRecipeCost(recipe, servingsWanted = null) {
+    const baseServ = Number(recipe.servings) || 1;
+    const want = servingsWanted == null ? baseServ : (Number(servingsWanted) || baseServ);
+    const factor = want / baseServ;
+
+    let known = 0;
+    let unknownItems = 0;
+
+    for (const ing of (recipe.ingredients || [])) {
+      const qty = Number(ing.qty);
+      const ppu = Number(ing.pricePerUnit);
+      if (isFinite(qty) && isFinite(ppu)) {
+        known += (qty * factor) * ppu;
+      } else {
+        unknownItems += 1;
+      }
+    }
+    return {
+      total: known,
+      unknownItems,
+      perServing: want ? (known / want) : null,
+      factor,
+      servingsWanted: want
+    };
+  }
+
+  // ---------------- CRUD
+  function resetForm() {
+    editingId = null;
+    formTitle.textContent = "Ajouter une recette";
+    saveBtn.textContent = "Enregistrer";
+
+    nameEl.value = "";
+    catEl.value = "";
+    timeEl.value = "";
+    servingsEl.value = "4";
+    costNoteEl.value = "";
+    stepsEl.value = "";
+
+    ingTableEl.innerHTML = "";
+    addIngRow({});
+    addIngRow({});
+    nameEl.focus();
+  }
+
+  function startEdit(id) {
+    const r = recipes.find(x => x.id === id);
+    if (!r) return;
+
+    editingId = id;
+    formTitle.textContent = "Modifier la recette";
+    saveBtn.textContent = "Mettre à jour";
+
+    nameEl.value = r.name || "";
+    catEl.value = r.category || "";
+    timeEl.value = r.time || "";
+    servingsEl.value = String(r.servings ?? 4);
+    costNoteEl.value = r.costNote || "";
+    stepsEl.value = r.steps || "";
+
+    ingTableEl.innerHTML = "";
+    for (const ing of (r.ingredients || [])) addIngRow({
+      qty: ing.qty ?? "",
+      unit: ing.unit ?? "",
+      name: ing.name ?? "",
+      pricePerUnit: ing.pricePerUnit ?? ""
+    });
+    ensureAtLeastOneRow();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    nameEl.focus();
+  }
+
+  function removeRecipe(id) {
+    recipes = recipes.filter(r => r.id !== id);
+    // remove from plan too
+    plan = plan.filter(p => p.recipeId !== id);
+    saveJSON(LS_RECIPES, recipes);
+    saveJSON(LS_PLAN, plan);
+    render();
+  }
+
+  function upsertFromForm() {
+    const name = (nameEl.value || "").trim();
+    const servings = n2(servingsEl.value);
+
+    if (!name) { alert("Le nom est obligatoire."); return; }
+    if (!servings || servings <= 0) { alert("Portions : mets un nombre > 0."); return; }
+
+    const ingredients = readIngRows();
+    if (ingredients.length === 0) { alert("Ajoute au moins 1 ingrédient (nom)."); return; }
+
+    const payload = {
+      id: editingId || uid(),
+      name,
+      name_n: normalize(name),
+      category: (catEl.value || "").trim(),
+      category_n: normalize(catEl.value || ""),
+      time: (timeEl.value || "").trim(),
+      servings,
+      costNote: (costNoteEl.value || "").trim(),
+      ingredients,
+      steps: (stepsEl.value || "").trim(),
+      updatedAt: Date.now(),
+      createdAt: editingId ? (recipes.find(r => r.id === editingId)?.createdAt || Date.now()) : Date.now(),
+    };
+
+    const idx = recipes.findIndex(r => r.id === payload.id);
+    if (idx >= 0) recipes[idx] = payload;
+    else recipes.unshift(payload);
+
+    saveJSON(LS_RECIPES, recipes);
+    resetForm();
+    render();
+  }
+
+  // ---------------- Search & matching
+  function computeMatch(recipe, queryIngs) {
+    if (queryIngs.length === 0) return { score: 0, matched: [], missing: [] };
+
+    const set = new Set((recipe.ingredients || []).map(i => i.name_n || normalize(i.name)));
+    const matched = [];
+    const missing = [];
+
+    for (const q of queryIngs) {
+      const hit = [...set].some(x => x.includes(q) || q.includes(x));
+      (hit ? matched : missing).push(q);
+    }
+    return { score: matched.length / queryIngs.length, matched, missing };
+  }
+
+  function filterRecipes() {
+    const qName = normalize(qNameEl.value);
+    const queryIngs = parseList(qIngEl.value);
+
+    let out = recipes.slice();
+
+    if (qName) {
+      out = out.filter(r =>
+        (r.name_n || "").includes(qName) ||
+        (r.category_n || "").includes(qName)
+      );
+    }
+
+    out = out.map(r => ({ ...r, _match: computeMatch(r, queryIngs) }));
+
+    if (queryIngs.length > 0 && modeEl.value === "any") {
+      out = out.filter(r => r._match.matched.length > 0);
+    }
+    // mode "best" = keep all but sorting by score generally
+
+    // Sorting
+    const sort = sortEl.value;
+    if (sort === "name") out.sort((a,b)=> (a.name||"").localeCompare(b.name||"", "fr"));
+    if (sort === "recent") out.sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
+    if (sort === "score") out.sort((a,b)=> (b._match.score||0)-(a._match.score||0) || (a.name||"").localeCompare(b.name||"", "fr"));
+    if (sort === "cheap") {
+      out.sort((a,b)=>{
+        const ca = computeRecipeCost(a).perServing;
+        const cb = computeRecipeCost(b).perServing;
+        const va = (ca == null || !isFinite(ca) || ca===0) ? Infinity : ca;
+        const vb = (cb == null || !isFinite(cb) || cb===0) ? Infinity : cb;
+        return va - vb || (a.name||"").localeCompare(b.name||"", "fr");
+      });
+    }
+
+    return { out, queryIngs };
+  }
+
+  // ---------------- Plan & shopping list
+  function addToPlan(recipeId, servingsWanted) {
+    const want = Number(servingsWanted) || Number(recipes.find(r=>r.id===recipeId)?.servings) || 1;
+    const idx = plan.findIndex(p => p.recipeId === recipeId);
+    if (idx >= 0) plan[idx].servingsWanted = want;
+    else plan.push({ recipeId, servingsWanted: want });
+    saveJSON(LS_PLAN, plan);
+    renderPlan();
+  }
+
+  function removeFromPlan(recipeId) {
+    plan = plan.filter(p => p.recipeId !== recipeId);
+    saveJSON(LS_PLAN, plan);
+    renderPlan();
+  }
+
+  function clearPlan() {
+    plan = [];
+    saveJSON(LS_PLAN, plan);
+    renderPlan();
+  }
+
+  function buildShoppingList() {
+    const pantry = new Set(parseList(pantryEl.value));
+    // map key: name_n + "|" + unit_base
+    const agg = new Map();
+
+    for (const item of plan) {
+      const r = recipes.find(x => x.id === item.recipeId);
+      if (!r) continue;
+      const baseServ = Number(r.servings) || 1;
+      const want = Number(item.servingsWanted) || baseServ;
+      const factor = want / baseServ;
+
+      for (const ing of (r.ingredients || [])) {
+        const name = (ing.name || "").trim();
+        const name_n = ing.name_n || normalize(name);
+        const qty = Number(ing.qty);
+        const unit = ing.unit || "";
+
+        // If no qty -> keep as "à estimer"
+        if (!isFinite(qty)) {
+          const key = name_n + "|_unknown";
+          const prev = agg.get(key) || { name, name_n, unit: "", qty: null, unknownCount: 0, inPantry: pantry.has(name_n) };
+          prev.unknownCount += 1;
+          prev.inPantry = prev.inPantry || pantry.has(name_n);
+          agg.set(key, prev);
+          continue;
+        }
+
+        const base = toBaseUnit(qty * factor, unit);
+        const key = name_n + "|" + (base.unit || normalize(unit));
+        const prev = agg.get(key) || { name, name_n, unit: base.unit || unit, qty: 0, unknownCount: 0, inPantry: pantry.has(name_n) };
+        prev.qty += (base.qty ?? 0);
+        prev.inPantry = prev.inPantry || pantry.has(name_n);
+        agg.set(key, prev);
+      }
+    }
+
+    const list = [...agg.values()];
+    list.sort((a,b)=> (a.inPantry===b.inPantry ? a.name.localeCompare(b.name,"fr") : (a.inPantry ? 1 : -1)));
+    return list;
+  }
+
+  function shoppingListText() {
+    const list = buildShoppingList();
+    if (list.length === 0) return "";
+
+    const lines = [];
+    for (const it of list) {
+      const prefix = it.inPantry ? "✓ (déjà?) " : "• ";
+      if (it.qty == null) {
+        lines.push(`${prefix}${it.name} — quantité à estimer`);
+      } else {
+        lines.push(`${prefix}${it.name} — ${fmtNum(it.qty)} ${unitLabel(it.unit)}`.trim());
+      }
+    }
+    return lines.join("\n");
+  }
+
+  // ---------------- Render plan
+  function renderPlan() {
+    if (plan.length === 0) {
+      planEl.className = "empty";
+      planEl.innerHTML = `Plan vide. Dans les résultats, clique “Ajouter au plan” pour générer la liste de courses.`;
+      return;
+    }
+
+    const items = plan.map(p => {
+      const r = recipes.find(x => x.id === p.recipeId);
+      if (!r) return "";
+      const cost = computeRecipeCost(r, p.servingsWanted);
+      const totalTxt = cost.total > 0 ? `${(Math.round(cost.total*100)/100).toFixed(2)} €` : "—";
+      const perTxt = (cost.perServing && isFinite(cost.perServing) && cost.perServing>0) ? `${(Math.round(cost.perServing*100)/100).toFixed(2)} €/portion` : "—";
+
+      return `
+        <div class="recipe" style="margin-top:10px;">
+          <h3>
+            <span>${escapeHtml(r.name)}</span>
+            <span class="score">${fmtNum(p.servingsWanted)} portions</span>
+          </h3>
+          <div class="small">
+            Coût estimé: <b>${totalTxt}</b> (${perTxt})
+            ${cost.unknownItems ? `<span class="warn"> • ${cost.unknownItems} ingrédient(s) sans prix</span>` : ``}
+          </div>
+          ${r.costNote ? `<div class="small">${escapeHtml(r.costNote)}</div>` : ""}
+
+          <div class="actions">
+            <button class="secondary" data-plan-dec="${r.id}">-</button>
+            <button class="secondary" data-plan-inc="${r.id}">+</button>
+            <button class="danger" data-plan-del="${r.id}">Retirer</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const list = buildShoppingList();
+    const listHtml = list.length ? `
+      <div class="recipe" style="margin-top:10px;">
+        <h3><span>🛒 Liste de courses</span></h3>
+        <div class="small" style="white-space:pre-wrap;">${escapeHtml(shoppingListText())}</div>
+      </div>
+    ` : "";
+
+    planEl.className = "";
+    planEl.innerHTML = `
+      ${planNoteEl.value ? `<div class="small"><b>Note:</b> ${escapeHtml(planNoteEl.value)}</div>` : ""}
+      ${items}
+      ${listHtml}
+    `;
+
+    planEl.querySelectorAll("[data-plan-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=> removeFromPlan(btn.getAttribute("data-plan-del")));
+    });
+    planEl.querySelectorAll("[data-plan-inc]").forEach(btn=>{
+      const id = btn.getAttribute("data-plan-inc");
+      btn.addEventListener("click", ()=>{
+        const p = plan.find(x=>x.recipeId===id);
+        const r = recipes.find(x=>x.id===id);
+        if (!p || !r) return;
+        p.servingsWanted = (Number(p.servingsWanted)||Number(r.servings)||1) + 1;
+        saveJSON(LS_PLAN, plan);
+        renderPlan();
+      });
+    });
+    planEl.querySelectorAll("[data-plan-dec]").forEach(btn=>{
+      const id = btn.getAttribute("data-plan-dec");
+      btn.addEventListener("click", ()=>{
+        const p = plan.find(x=>x.recipeId===id);
+        const r = recipes.find(x=>x.id===id);
+        if (!p || !r) return;
+        p.servingsWanted = Math.max(1, (Number(p.servingsWanted)||Number(r.servings)||1) - 1);
+        saveJSON(LS_PLAN, plan);
+        renderPlan();
+      });
+    });
+  }
+
+  // ---------------- Render recipes results
+  function renderResults() {
+    const { out, queryIngs } = filterRecipes();
+    countLabel.textContent = `${out.length} recette(s)`;
+
+    if (recipes.length === 0) {
+      resultsEl.innerHTML = `<div class="empty">Aucune recette. Ajoute-en une à gauche 🙂</div>`;
+      return;
+    }
+    if (out.length === 0) {
+      resultsEl.innerHTML = `<div class="empty">Aucun résultat.</div>`;
+      return;
+    }
+
+    resultsEl.innerHTML = out.map(r => {
+      const scorePct = queryIngs.length ? Math.round((r._match.score || 0) * 100) : null;
+
+      const baseCost = computeRecipeCost(r);
+      const totalTxt = baseCost.total > 0 ? `${(Math.round(baseCost.total*100)/100).toFixed(2)} €` : "—";
+      const perTxt = (baseCost.perServing && isFinite(baseCost.perServing) && baseCost.perServing>0) ? `${(Math.round(baseCost.perServing*100)/100).toFixed(2)} €/portion` : "—";
+
+      const pills = [
+        r.category ? `<span class="pill">🏷️ ${escapeHtml(r.category)}</span>` : "",
+        r.time ? `<span class="pill">⏱️ ${escapeHtml(r.time)}</span>` : "",
+        `<span class="pill">👥 ${fmtNum(r.servings)} portions</span>`,
+        `<span class="pill">💰 ${totalTxt} (${perTxt})</span>`
+      ].join("");
+
+      const ingList = (r.ingredients || []).map(i => {
+        const q = (i.qty == null || !isFinite(Number(i.qty))) ? "" : fmtNum(i.qty);
+        const u = i.unit ? unitLabel(i.unit) : "";
+        const ppu = (i.pricePerUnit == null || !isFinite(Number(i.pricePerUnit))) ? "" : ` • ${fmtNum(i.pricePerUnit)}€/u`;
+        return `<span class="pill">${escapeHtml(`${q} ${u} ${i.name}`.replace(/\s+/g," ").trim())}${escapeHtml(ppu)}</span>`;
+      }).join("");
+
+      const matchLine = queryIngs.length
+        ? `<div class="small">✅ Match: <b>${r._match.matched.length}</b> / ${queryIngs.length} — manque: ${r._match.missing.length ? r._match.missing.map(escapeHtml).join(", ") : "rien"}</div>`
+        : "";
+
+      const inPlan = plan.find(p=>p.recipeId===r.id);
+      const defaultWant = inPlan ? inPlan.servingsWanted : r.servings;
+
+      return `
+        <div class="recipe">
+          <h3>
+            <span>${escapeHtml(r.name)}</span>
+            ${queryIngs.length ? `<span class="score">${scorePct}%</span>` : ``}
+          </h3>
+          <div class="meta">${pills}</div>
+          ${matchLine}
+          ${r.costNote ? `<div class="small">${escapeHtml(r.costNote)}</div>` : ""}
+
+          <details>
+            <summary>Voir ingrédients / préparation</summary>
+            <div class="small" style="margin-top:8px;"><b>Ingrédients :</b></div>
+            <div>${ingList || `<span class="pill">—</span>`}</div>
+            ${r.steps ? `<div class="small" style="margin-top:10px; white-space:pre-wrap;"><b>Préparation :</b>\n${escapeHtml(r.steps)}</div>` : ""}
+          </details>
+
+          <div class="actions">
+            <button class="secondary" data-edit="${r.id}">Modifier</button>
+            <button class="danger" data-del="${r.id}">Supprimer</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row two">
+            <div>
+              <label>Ajouter au plan (portions)</label>
+              <input class="wantServ" inputmode="numeric" value="${escapeHtml(defaultWant)}" data-want="${r.id}">
+              <div class="muted">Tu peux changer le nombre de portions → liste de courses recalculée.</div>
+            </div>
+            <div class="actions" style="align-items:flex-end;">
+              <button data-addplan="${r.id}">${inPlan ? "Mettre à jour le plan" : "Ajouter au plan"}</button>
+              ${inPlan ? `<button class="danger" data-remplan="${r.id}">Retirer du plan</button>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // bind events
+    resultsEl.querySelectorAll("[data-edit]").forEach(btn=>{
+      btn.addEventListener("click", ()=> startEdit(btn.getAttribute("data-edit")));
+    });
+    resultsEl.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-del");
+        const r = recipes.find(x=>x.id===id);
+        if (r && confirm(`Supprimer "${r.name}" ?`)) removeRecipe(id);
+      });
+    });
+    resultsEl.querySelectorAll("[data-addplan]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-addplan");
+        const input = resultsEl.querySelector(`.wantServ[data-want="${CSS.escape(id)}"]`);
+        const want = input ? Number(input.value) : null;
+        addToPlan(id, want);
+      });
+    });
+    resultsEl.querySelectorAll("[data-remplan]").forEach(btn=>{
+      btn.addEventListener("click", ()=> removeFromPlan(btn.getAttribute("data-remplan")));
+    });
+  }
+
+  function render() {
+    renderResults();
+    renderPlan();
+  }
+
+  // ---------------- Export/Import
+  exportBtn.addEventListener("click", () => {
+    const payload = {
+      recipes,
+      plan,
+      exportedAt: new Date().toISOString()
+    };
+    const data = JSON.stringify(payload, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "carnet_recettes_backup.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  importBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const recs = Array.isArray(parsed) ? parsed : parsed.recipes;
+      const pl = Array.isArray(parsed?.plan) ? parsed.plan : [];
+
+      if (!Array.isArray(recs)) throw new Error("format");
+
+      // normalize minimal
+      const cleaned = recs.map(r => ({
+        id: r.id || uid(),
+        name: r.name || "Sans nom",
+        name_n: normalize(r.name || ""),
+        category: r.category || "",
+        category_n: normalize(r.category || ""),
+        time: r.time || "",
+        servings: Number(r.servings) || 1,
+        costNote: r.costNote || "",
+        ingredients: Array.isArray(r.ingredients) ? r.ingredients.map(i => ({
+          name: i.name || "",
+          name_n: normalize(i.name || ""),
+          qty: isFinite(Number(i.qty)) ? Number(i.qty) : null,
+          unit: i.unit || "",
+          unit_n: normalize(i.unit || ""),
+          pricePerUnit: isFinite(Number(i.pricePerUnit)) ? Number(i.pricePerUnit) : null
+        })) : [],
+        steps: r.steps || "",
+        updatedAt: r.updatedAt || Date.now(),
+        createdAt: r.createdAt || Date.now()
+      }));
+
+      recipes = cleaned.sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
+      plan = Array.isArray(pl) ? pl.filter(x=>x && x.recipeId) : [];
+      saveJSON(LS_RECIPES, recipes);
+      saveJSON(LS_PLAN, plan);
+      fileInput.value = "";
+      render();
+      alert("Import réussi ✅");
+    } catch {
+      alert("Import impossible : fichier JSON invalide.");
+    }
+  });
+
+  wipeBtn.addEventListener("click", () => {
+    if (!confirm("Tout effacer (recettes + plan) ?")) return;
+    recipes = [];
+    plan = [];
+    saveJSON(LS_RECIPES, recipes);
+    saveJSON(LS_PLAN, plan);
+    resetForm();
+    render();
+  });
+
+  // ---------------- Buttons & inputs
+  saveBtn.addEventListener("click", upsertFromForm);
+  resetBtn.addEventListener("click", resetForm);
+
+  addIngBtn.addEventListener("click", () => addIngRow({}));
+  addCommonBtn.addEventListener("click", () => {
+    // “bases” courantes (quantité optionnelle)
+    const common = ["sel", "poivre", "huile", "ail", "oignon"];
+    for (const n of common) addIngRow({ qty: "", unit: "", name: n, pricePerUnit: "" });
+  });
+
+  [qNameEl, qIngEl].forEach(el => el.addEventListener("input", renderResults));
+  modeEl.addEventListener("change", renderResults);
+  sortEl.addEventListener("change", renderResults);
+
+  pantryEl.addEventListener("input", renderPlan);
+  planNoteEl.addEventListener("input", renderPlan);
+
+  clearPlanBtn.addEventListener("click", () => {
+    if (!confirm("Vider le plan ?")) return;
+    clearPlan();
+  });
+
+  copyListBtn.addEventListener("click", async () => {
+    const text = shoppingListText();
+    if (!text) { alert("Plan vide → rien à copier."); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Liste copiée ✅ (tu peux la coller dans Notes / Messages)");
+    } catch {
+      // fallback
+      prompt("Copie manuelle :", text);
+    }
+  });
+
+  // ---------------- Init
+  resetForm();
+  render();
+</script>
+</body>
+</html>
